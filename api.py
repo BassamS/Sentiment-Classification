@@ -1,7 +1,9 @@
+from turtle import title
 import requests
+import time
+import json
 from api_secrets import API_KEY_ASSEMBLYAI
 
-import time
 
 # Upload
 upload_endpoint = "https://api.assemblyai.com/v2/upload"
@@ -27,8 +29,9 @@ def upload(filename):
 
 
 # Transcribe
-def transcribe(audio_url):
-    transcript_request = {"audio_url": audio_url}
+def transcribe(audio_url, sentiment_analysis):
+    transcript_request = {"audio_url": audio_url,
+                          "sentiment_analysis": sentiment_analysis}
     transcript_response = requests.post(
         transcript_endpoint, json=transcript_request, headers=headers)
 
@@ -43,8 +46,8 @@ def poll(transcript_id):
     return polling_response.json()
 
 
-def get_transcription_result_url(audio_url):
-    transcript_id = transcribe(audio_url)
+def get_transcription_result_url(audio_url, sentiment_analysis):
+    transcript_id = transcribe(audio_url, sentiment_analysis)
     while True:
         data = poll(transcript_id)
         if data['status'] == 'completed':
@@ -57,13 +60,20 @@ def get_transcription_result_url(audio_url):
 
 
 # Save transcription
-def save_transcript(audio_url, filename):
-    data, error = get_transcription_result_url(audio_url)
+def save_transcript(audio_url, filename, sentiment_analysis=False):
+    data, error = get_transcription_result_url(audio_url, sentiment_analysis)
 
     if data:
-        text_filename = filename = ".txt"
-        with open(text_filename, "w") as f:
+        text_filename = title = ".txt"
+        with open(filename, "w") as f:
             f.write(data['text'])
+
+            if sentiment_analysis:
+                filename = title + "_sentiments.json"
+                with open(filename, "w") as f:
+                    sentiments = data["sentiments_analysis_results"]
+                    json.dump(sentiments, f, indent=4)
+
             print('Transcription saved!!')
     elif error:
         print("Error!!", error)

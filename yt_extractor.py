@@ -17,8 +17,8 @@ def get_video_info(url):
 
 def get_audio_url(video_info):
     for f in video_info["formats"]:
-        # print(f["ext"], f["url"])
-        print(f["ext"])
+        if f["ext"] == "m4a":
+            return f["url"]
 
 
 if __name__ == "__main__":
